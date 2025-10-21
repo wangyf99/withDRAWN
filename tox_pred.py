@@ -2,6 +2,7 @@ import random
 import math
 import numpy as np
 import pandas as pd
+import statistics
 from sklearn.ensemble import RandomForestClassifier
 from tpot import TPOTClassifier
 from sklearn.metrics import accuracy_score
@@ -16,13 +17,13 @@ from sklearn.feature_selection import RFECV
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.feature_selection import GenericUnivariateSelect, chi2
 
-def load_labels(label_key_number, random_seed, train_percent):
+def load_labels(label_key_number, random_seed, train1_percent, train2_percent, test_percent):
     '''loads drugs corresponding to a ballanced training and two test sets
 
     Input:
     label_key_number (int)- column in the label file to use as the labels
     random_seed (int) - controls the randomness for replicability if desired
-    train_percent (float) - percent of the set used for testing
+    train_percent (float) - percent of the set used for testing, recomend 0.9 or less
 
     Output: (train, test1, test2, Ltrain, Ltest1, Ltest2) (tuple of lists) lists of labels and lists of drug names corresponding to a ballanced training and two test sets
     '''
@@ -40,20 +41,51 @@ def load_labels(label_key_number, random_seed, train_percent):
             i += 1
 
     random.seed(random_seed)
-    size_samples = math.floor(min(len(positive)*(train_percent), len(negative)*(train_percent)))
-    size_test = math.floor(min((len(positive)*(1-train_percent))/2, (len(negative)*(1-train_percent))/2))
+    
+    size_samples = math.floor(min(len(positive)*(train1_percent), len(negative)*(train1_percent)))
+    size_samples2 = math.floor(min(len(positive)*(train2_percent), len(negative)*(train2_percent)))
+    size_test = math.floor(min(len(positive)*(test_percent), len(negative)*(test_percent)))
 
     rearrange_positive = random.sample(positive, len(positive))
     rearrange_negative = random.sample(negative, len(negative))
 
-    train = rearrange_positive[:size_samples] + rearrange_negative[:size_samples] 
-    test1 = rearrange_positive[size_samples:size_samples+size_test] + rearrange_negative[size_samples:size_samples+size_test] 
-    test2 = rearrange_positive[size_samples+size_test:size_samples+2*size_test] + rearrange_negative[size_samples+size_test:size_samples+2*size_test]
-    Ltrain = [1]*len(rearrange_positive[:size_samples]) + [0]*len(rearrange_negative[:size_samples])
-    Ltest1 = [1]*len(rearrange_positive[size_samples:size_samples+size_test]) + [0]*len(rearrange_negative[size_samples:size_samples+size_test])
-    Ltest2 = [1]*len(rearrange_positive[size_samples+size_test:size_samples+2*size_test]) + [0]*len(rearrange_negative[size_samples+size_test:size_samples+2*size_test])
+    train1 = rearrange_positive[:size_samples] + rearrange_negative[:size_samples] 
+    train2 = rearrange_positive[size_samples:size_samples+size_samples2] + rearrange_negative[size_samples:size_samples+size_samples2] 
+    test1 = rearrange_positive[size_samples+size_samples2:size_samples+size_samples2+size_test] + rearrange_negative[size_samples+size_samples2:size_samples+size_samples2+size_test]
+    
+    Ltrain1 = [1]*len(rearrange_positive[:size_samples]) + [0]*len(rearrange_negative[:size_samples])
+    Ltrain2 = [1]*len(rearrange_positive[size_samples:size_samples+size_samples2]) + [0]*len(rearrange_negative[size_samples:size_samples+size_samples2])
+    Ltest1 = [1]*len(rearrange_positive[size_samples+size_samples2:size_samples+size_samples2+size_test]) + [0]*len(rearrange_negative[size_samples+size_samples2:size_samples+size_samples2+size_test])
+    return train1, train2, test1, Ltrain1, Ltrain2, Ltest1
 
-    return train, test1, test2, Ltrain, Ltest1, Ltest2
+    #9010
+    # size_samples = math.floor(min(len(positive)*(train_percent), len(negative)*(train_percent)))
+    # size_test = math.floor(min(len(positive)*(1-train_percent), len(negative)*(1-train_percent)))
+
+    # rearrange_positive = random.sample(positive, len(positive))
+    # rearrange_negative = random.sample(negative, len(negative))
+
+    # train1 = rearrange_positive[:size_samples] + rearrange_negative[:size_samples] 
+    # test1 = rearrange_positive[size_samples:size_samples+size_test] + rearrange_negative[size_samples:size_samples+size_test]
+    # Ltrain1 = [1]*len(rearrange_positive[:size_samples]) + [0]*len(rearrange_negative[:size_samples])
+    # Ltest1 = [1]*len(rearrange_positive[size_samples:size_samples+size_test]) + [0]*len(rearrange_negative[size_samples:size_samples+size_test])
+    # return train1, train1, test1, Ltrain1, Ltrain1, Ltest1
+
+    #454510
+    # size_samples = math.floor(min((len(positive)*(train_percent))/2, (len(negative)*(train_percent))/2))
+    # size_test = math.floor(min(len(positive)*(1-train_percent), len(negative)*(1-train_percent)))
+
+    # rearrange_positive = random.sample(positive, len(positive))
+    # rearrange_negative = random.sample(negative, len(negative))
+
+    # train1 = rearrange_positive[:size_samples] + rearrange_negative[:size_samples] 
+    # train2 = rearrange_positive[size_samples:size_samples*2] + rearrange_negative[size_samples:size_samples*2] 
+    # test1 = rearrange_positive[size_samples*2:size_samples*2+size_test] + rearrange_negative[size_samples*2:size_samples*2+size_test]
+    # Ltrain1 = [1]*len(rearrange_positive[:size_samples]) + [0]*len(rearrange_negative[:size_samples])
+    # Ltrain2 = [1]*len(rearrange_positive[size_samples:size_samples*2]) + [0]*len(rearrange_negative[size_samples:size_samples*2])
+    # Ltest1 = [1]*len(rearrange_positive[size_samples*2:size_samples*2+size_test]) + [0]*len(rearrange_negative[size_samples*2:size_samples*2+size_test])
+
+    #return train1, train2, test1, Ltrain1, Ltrain2, Ltest1
 
 def load_nongraph(drug_names_list, filename):
     ''' load data for the drugs in the list from the file
@@ -128,7 +160,7 @@ def evaluate(y_test, y_test_predict):
     mcc = matthews_corrcoef(y_test, y_test_predict)
     return acc,aroc,f1_val,precision_val,recall_val,mcc
 
-def split_norm_data(train, test1, test2):
+def split_norm_data(train, test):
     ''' loads the data and normalizes by the training set
 
     Inputs: train, test1, test2 each (list) contains names of the drugs (str) in the data subset 
@@ -137,19 +169,16 @@ def split_norm_data(train, test1, test2):
     list of tuples where the first index of the tuple is the dataset label (str) and the remainder are pandas dataframes corresponding to train_set,test_set1,test_set2
     '''
     load_train = load_data(train)
-    load_test1 = load_data(test1) 
-    load_test2 = load_data(test2)
+    load_test = load_data(test) 
     l = ['sages', 'fp', 'drug_features', 'targetsall']
     out = []
     for data_i in range(len(load_train)):
         train_set = norm_data_by_train(load_train[data_i],load_train[data_i])
-        test_set1 = norm_data_by_train(load_train[data_i],load_test1[data_i])
-        test_set2 = norm_data_by_train(load_train[data_i],load_test2[data_i])
-        out.append((l[data_i], train_set,test_set1,test_set2))
+        test_set = norm_data_by_train(load_train[data_i],load_test[data_i])
+        out.append((l[data_i], train_set, test_set))
     return out
 
-
-def tuning_level1(label_key_number, random_seed, train_percent,classifiers, cl, outdir, write=False):
+def tuning_level1(label_key_number, random_seed, num_test_itterations, train1_percent, train2_percent, test_percent, classifiers, cl, outdir, write=True):
     '''model selection and hyperparameter tuning for each of the datasets
 
     Inputs:
@@ -169,8 +198,8 @@ def tuning_level1(label_key_number, random_seed, train_percent,classifiers, cl, 
     dataset - classifier - random seed -level2_train.csv: predictions for the classifier on the data set, used as training data for the ensemble
     dataset - classifier - random seed -level2_test.csv: predictions for the classifier on the data set, used as testing data for the ensemble
     '''
-    train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key_number, random_seed, train_percent)
-    data = split_norm_data(train, test1, test2)
+    train1, train2, test1, Ltrain1, Ltrain2, Ltest1 = load_labels(label_key_number, random_seed, train1_percent, train2_percent, test_percent)
+    data = split_norm_data(train1, test1)
     if write:
         fout0 = open(outdir+'level1_summary.csv', '+a')
         fout0.write('RandomSeed,Data,Accuracy,AUROC,F1,Precision,Recall,MCC,Classifier\n')
@@ -181,22 +210,27 @@ def tuning_level1(label_key_number, random_seed, train_percent,classifiers, cl, 
         data_set = data[data_set_i]
         print(data_set[0])
         train_set = data_set[1]
-        test_set1 = data_set[2]
-        test_set2 = data_set[3]
+        # test_set1 = data_set[2]
+        # test_set2 = data_set[3]
         
         for clf_i in range(len(classifiers)):
             clf = classifiers[clf_i]
-            clf.fit(train_set,np.array(Ltrain))
+            clf.fit(train_set,np.array(Ltrain1))
             exctracted_best_model = clf.fitted_pipeline_.steps[-1][1]
             if write:
                 clf.export(outdir+cl[clf_i]+ '-' + data_set[0]+'-level1-tpot_exported_pipeline.py')
-            for rs in range(10):
-                rstrain, rstest1, rstest2, rsLtrain, rsLtest1, rsLtest2 = load_labels(label_key_number, rs, train_percent)
-                rsdata = split_norm_data(rstrain, rstest1, rstest2)
-                rstrain_set = rsdata[data_set_i][1]
+            for rs in range(random_seed, random_seed+num_test_itterations):
+                rstrain1, rstrain2, rstest1, rsLtrain1, rsLtrain2, rsLtest1 = load_labels(label_key_number, rs, train1_percent, train2_percent, test_percent)
+                
+                rsdata = split_norm_data(rstrain1, rstest1)
+                rsdata2 = split_norm_data(rstrain2, rstest1)
+                rstrain_set1 = rsdata[data_set_i][1]
                 rstest_set1 = rsdata[data_set_i][2]
-                rstest_set2 = rsdata[data_set_i][3]
-                rsmodel = exctracted_best_model.fit(rstrain_set,np.array(rsLtrain))
+
+                rstrain_set2 = rsdata2[data_set_i][1]
+                rstest_set2 = rsdata2[data_set_i][2]
+
+                rsmodel = exctracted_best_model.fit(rstrain_set1,np.array(rsLtrain1))
 
                 y_predict_test1 = rsmodel.predict(rstest_set1)
                 
@@ -204,12 +238,12 @@ def tuning_level1(label_key_number, random_seed, train_percent,classifiers, cl, 
                 
                 if write:
                     fout1 = open( outdir + data_set[0]+'-level1_out_train_labels.csv','a+')
-                    for elt in rsLtrain+rsLtest1:
+                    for elt in rsLtrain2:
                         fout1.write(str(elt)+ ',')
                     fout1.write('\n')
                     fout1.close()
                     fout2 = open(outdir + data_set[0]+'-level1_out_test_labels.csv' ,'a+')
-                    for elt in rsLtest2:
+                    for elt in rsLtest1:
                         fout2.write(str(elt)+ ',')
                     fout2.write('\n')
                     fout2.close()
@@ -218,33 +252,18 @@ def tuning_level1(label_key_number, random_seed, train_percent,classifiers, cl, 
                     fout0.write(out_str)
                     fout0.close()
 
-                    try:
-                        y_predict_test1 = rsmodel.predict_proba(rstest_set1)
-                        y_predict_test2 = rsmodel.predict_proba(rstest_set2)
-                        y_predict_train = rsmodel.predict_proba(rstrain_set)
-                        fout3 = open( outdir + data_set[0]+'-'+cl[clf_i]+'-'+str(rs)+'-level2_train.csv','a+')
-                        for elt in list(y_predict_train) + list(y_predict_test1):
-                            fout3.write(str(elt[0])+ ',')
-                        fout3.write('\n')
-                        fout3.close()
-                        fout4 = open( outdir+ data_set[0]+'-'+ cl[clf_i]+'-'+str(rs)+'-level2_test.csv','a+')
-                        for elt in list(y_predict_test2):
-                            fout4.write(str(elt[0])+ ',')
-                        fout4.write('\n')
-                        fout4.close()
-                    except:
-                        y_predict_test2 = rsmodel.predict(rstest_set2)
-                        y_predict_train = rsmodel.predict(rstrain_set)
-                        fout3 = open( outdir + data_set[0]+'-'+cl[clf_i]+'-'+str(rs)+'-level2_train.csv','a+')
-                        for elt in list(y_predict_train) + list(y_predict_test1):
-                            fout3.write(str(elt)+ ',')
-                        fout3.write('\n')
-                        fout3.close()
-                        fout4 = open( outdir+ data_set[0]+'-'+ cl[clf_i]+'-'+str(rs)+'-level2_test.csv','a+')
-                        for elt in list(y_predict_test2):
-                            fout4.write(str(elt)+ ',')
-                        fout4.write('\n')
-                        fout4.close()
+                    y_predict_test2 = rsmodel.predict_proba(rstest_set2)
+                    y_predict_train2 = rsmodel.predict_proba(rstrain_set2)
+                    fout3 = open( outdir + data_set[0]+'-'+cl[clf_i]+'-'+str(rs)+'-level2_train.csv','a+')
+                    for elt in list(y_predict_train2):
+                        fout3.write(str(elt[0])+ ',')
+                    fout3.write('\n')
+                    fout3.close()
+                    fout4 = open( outdir+ data_set[0]+'-'+ cl[clf_i]+'-'+str(rs)+'-level2_test.csv','a+')
+                    for elt in list(y_predict_test2):
+                        fout4.write(str(elt[0])+ ',')
+                    fout4.write('\n')
+                    fout4.close()
 
 def get_label_from_l1(outdir, train_or_test):
     '''reads the file containing labels of the training and test sets for the ensemble
@@ -264,8 +283,7 @@ def get_label_from_l1(outdir, train_or_test):
                 out.append(float(elt))
             return out
 
-
-def tuning_level2(classifiers, cl, outdir, write = False):
+def tuning_level2(classifiers, cl, outdir, write = True):
     '''trains the ensemble and evaluates
 
     Inputs:
@@ -312,7 +330,6 @@ def tuning_level2(classifiers, cl, outdir, write = False):
                 fout0.write(out_str)
                 fout0.close()
 
-
 def level1_fs2(label_key, outdir):
     '''feature selection for the best performing classifiers trained on each of the datasets 
 
@@ -328,7 +345,7 @@ def level1_fs2(label_key, outdir):
     l = {'sages':{}, 'target':{}, 'fp':{}, 'drug_features':{}}
     for rs in range(10):
         print(rs)
-        train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key, rs, 0.8)
+        train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key, rs, 0.8,0.1,0.1)
         data = split_norm_data(train, test1, test2)
     
         for data_set_i in range(len(data)):
@@ -362,8 +379,7 @@ def level1_fs2(label_key, outdir):
                 fout.write('\n')
                 fout.close()
 
-
-def get_prroc(prroc_conds, label_key_number, random_seed, train_percent,classifiers, cl, outdir, write=False):
+def get_prroc(prroc_conds, label_key_number, random_seed, train1_percent, train2_percent, test_percent,classifiers, cl, outdir, write=True):
     '''calculates the precision recall and receiver operator characteristic curves 
 
     Inputs:
@@ -379,43 +395,113 @@ def get_prroc(prroc_conds, label_key_number, random_seed, train_percent,classifi
     Outputs: returns None, but will save the following files (if the write variable is True)
     random seed dataset - classifier -curves.csv file containing false positive rate, true positive rate, precision and recall for classifier traind on the random seed
     '''
-    train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key_number, random_seed, train_percent)
-    data = split_norm_data(train, test1, test2)
+    # train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key_number, random_seed, train1_percent, train2_percent, test_percent)
+    # data = split_norm_data(train, test1, test2)
+    train1, train2, test1, Ltrain1, Ltrain2, Ltest1 = load_labels(label_key_number, random_seed, train1_percent, train2_percent, test_percent)
+    data = split_norm_data(train1, test1)
     
     for data_set_i in range(len(data)):
         print('****************')
         data_set = data[data_set_i]
         print(data_set[0])
         train_set = data_set[1]
-        test_set1 = data_set[2]
-        test_set2 = data_set[3]
+        # test_set1 = data_set[2]
+        # test_set2 = data_set[3]
         
         for clf_i in range(len(classifiers)):
             clf = classifiers[clf_i]
             if data_set[0]+ '-' + cl[clf_i] in prroc_conds:
                 for rs in range(random_seed, random_seed +10):
+                # for rs in range(random_seed, random_seed +1):
                     if rs == random_seed:
-                        clf.fit(train_set,np.array(Ltrain))
+                        clf.fit(train_set,np.array(Ltrain1))
                         exctracted_best_model = clf.fitted_pipeline_.steps[-1][1]
                     
-                    rstrain, rstest1, rstest2, rsLtrain, rsLtest1, rsLtest2 = load_labels(label_key_number, rs, train_percent)
-                    rsdata = split_norm_data(rstrain, rstest1, rstest2)
-                    rstrain_set = rsdata[data_set_i][1]
+                    # rstrain, rstest1, rstest2, rsLtrain, rsLtest1, rsLtest2 = load_labels(label_key_number, rs, train1_percent, train2_percent, test_percent)
+                    # rsdata = split_norm_data(rstrain, rstest1, rstest2)
+                    rstrain1, rstrain2, rstest1, rsLtrain1, rsLtrain2, rsLtest1 = load_labels(label_key_number, rs, train1_percent, train2_percent, test_percent)
+                    rsdata = split_norm_data(rstrain1, rstest1)
+                    rsdata2 = split_norm_data(rstrain2, rstest1)
+                    rstrain_set1 = rsdata[data_set_i][1]
                     rstest_set1 = rsdata[data_set_i][2]
-                    rstest_set2 = rsdata[data_set_i][3]
-                    rsmodel = exctracted_best_model.fit(rstrain_set,np.array(rsLtrain))
-                    y_predict_test1 = rsmodel.predict_proba(rstest_set1)
-                    y_predict_test2 = rsmodel.predict_proba(rstest_set2)
+
+                    # rstrain_set2 = rsdata2[data_set_i][1]
+                    # rstest_set2 = rsdata2[data_set_i][2]
+
+                    rsmodel = exctracted_best_model.fit(rstrain_set1,np.array(rsLtrain1))
+                    y_predict_test1 = rsmodel.predict(rstest_set1)
+                    # rstrain_set = rsdata[data_set_i][1]
+                    # rstest_set1 = rsdata[data_set_i][2]
+                    # rstest_set2 = rsdata[data_set_i][3]
+                    # rsmodel = exctracted_best_model.fit(rstrain_set,np.array(rsLtrain))
+                    # y_predict_test1 = rsmodel.predict_proba(rstest_set1)
+                    # y_predict_test2 = rsmodel.predict_proba(rstest_set2)
                     if write:
                         temp_ypred = []
-                        for elt in list(y_predict_test2):
-                            temp_ypred.append(float(elt[1]))
-                        fpr, tpr, thresholds = roc_curve(np.array(rsLtest2), temp_ypred, pos_label=1)
+                        for elt in list(y_predict_test1):
+                            # print(elt)
+                            temp_ypred.append(float(elt))
+                        temp_ypred = y_predict_test1
+                        fpr, tpr, thresholds = roc_curve(np.array(rsLtest1), temp_ypred, pos_label=1)
                         precision, recall, thresholds = precision_recall_curve(np.array(rsLtest1), temp_ypred)
-                        filename = outdir + 'prroc/'+str(rs)+ data_set[0]+'-'+cl[clf_i]+'-curves.csv'
+                        filename = outdir + 'prroc2/'+str(rs)+ data_set[0]+'-'+cl[clf_i]+'-curves.csv'
                         with open(filename,"w") as f:
                             f.write("\n".join(",".join(map(str, x)) for x in (fpr,tpr,precision, recall)))
-    
+
+def get_ensemble_prroc(label_key_number, random_seed, train1_percent, train2_percent, test_percent,classifiers, cl, outdir, write=True):
+    '''calculates the precision recall and receiver operator characteristic curves 
+
+    Inputs:
+    prroc_conds (list of str) conatins a list of best classifiers for each dataset 
+    label_key_number (int) column number corresponding to which labels to use in the tox_labels.csv file
+    random_seed (int) for model instantiation and dataset splitting
+    train_percent (float) amount of the dataset used for training, the remaning data will be split into two test sets
+    classifiers (list of TPOT classifiers)
+    cl (list of str) classifier labels with the same indexing as classifiers
+    outdir (str) directory where output files will be saved
+    write (boolean) for debugging purposes, False will prevent any files from being saved
+
+    Outputs: returns None, but will save the following files (if the write variable is True)
+    random seed dataset - classifier -curves.csv file containing false positive rate, true positive rate, precision and recall for classifier traind on the random seed
+    '''
+    # train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key_number, random_seed, train1_percent, train2_percent, test_percent)
+    # data = split_norm_data(train, test1, test2)
+    train1, train2, test1, Ltrain1, Ltrain2, Ltest1 = load_labels(label_key_number, random_seed, train1_percent, train2_percent, test_percent)
+    data = split_norm_data(train1, test1)
+
+    train_data = pd.read_csv(outdir+'0-level2_train.csv', header=None)
+    train_data = train_data.transpose()
+    train_data.drop(train_data.tail(1).index,inplace=True)
+    Ltrain = get_label_from_l1(outdir, 'train')
+
+    for clf_i in range(len(classifiers)):
+        clf = classifiers[clf_i]
+        if cl[clf_i] == 'tpotsk':
+            clf.fit(train_data,np.array(Ltrain))
+            exctracted_best_model = clf.fitted_pipeline_.steps[-1][1]
+            for rs in range(10):
+                train_data = pd.read_csv(outdir+str(rs)+'-level2_train.csv', header=None)
+                train_data = train_data.transpose()
+                test_data = pd.read_csv(outdir+str(rs)+'-level2_test.csv', header=None)
+                test_data = test_data.transpose()
+                train_data.drop(train_data.tail(1).index,inplace=True)
+                test_data.drop(test_data.tail(1).index,inplace=True)
+                Ltrain = get_label_from_l1(outdir, 'train')
+                Ltest = get_label_from_l1(outdir, 'test')
+                rsmodel = exctracted_best_model.fit(train_data,np.array(Ltrain)) 
+                y_predict_test1 = rsmodel.predict(test_data)
+
+                if write:
+                    temp_ypred = []
+                    for elt in list(y_predict_test1):
+                        # print(elt)
+                        temp_ypred.append(float(elt))
+                    temp_ypred = y_predict_test1
+                    fpr, tpr, thresholds = roc_curve(np.array(Ltest), temp_ypred, pos_label=1)
+                    precision, recall, thresholds = precision_recall_curve(np.array(Ltest), temp_ypred)
+                    filename = outdir + 'prroc2/'+str(rs)+ 'ensembleall-'+cl[clf_i]+'-curves.csv'
+                    with open(filename,"w") as f:
+                        f.write("\n".join(",".join(map(str, x)) for x in (fpr,tpr,precision, recall)))
 
 def split_norm_data_dict(train, test1, test2):
     '''loads the data and normalizes by the training set
@@ -489,8 +575,7 @@ def load_level2_drugspred(outdir,rs):
     train_data.drop(train_data.head(1).index,inplace=True)
     return train_data
 
-
-def pred_trials_level1(pred_conds, label_key_number, train_percent,classifiers, cl, outdir, write=False):
+def pred_trials_level1(pred_conds, label_key_number, train1_percent, train2_percent, test_percent,classifiers, cl, outdir, write=True):
     '''individual classifier (trained on the test set) predictions of drugs in clinical trials
 
     Inputs:
@@ -512,13 +597,13 @@ def pred_trials_level1(pred_conds, label_key_number, train_percent,classifiers, 
             if data_name+ '-' + cl[clf_i] in pred_conds:
                 print('****************')
                 print(data_name)
-                train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key_number, 0, train_percent)
+                train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key_number, 0, train1_percent, train2_percent, test_percent)
                 train_set,test_set1,test_set2 = split_norm_data_dict(train, test1, test2)[data_name]
                 clf = classifiers[clf_i]
                 clf.fit(train_set,np.array(Ltrain))
                 exctracted_best_model = clf.fitted_pipeline_.steps[-1][1]
                 for rs in range(10):
-                    train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key_number, rs, train_percent)
+                    train, test1, test2, Ltrain, Ltest1, Ltest2 = load_labels(label_key_number, rs, train1_percent, train2_percent, test_percent)
                     train_set,test_set1,test_set2 = split_norm_data_dict(train, test1, test2)[data_name]
                     rsmodel = exctracted_best_model.fit(train_set,np.array(Ltrain))
                     try:
@@ -540,7 +625,7 @@ def pred_trials_level1(pred_conds, label_key_number, train_percent,classifiers, 
                             fout4.write('\n')
                             fout4.close()
 
-def pred_trials_level2(outdir,write=False):
+def pred_trials_level2(outdir,write=True):
     '''ensemble predictor trained on test set for use predicting drugs in clinical trials
     
     Inputs: 
@@ -581,102 +666,111 @@ def pred_trials_level2(outdir,write=False):
                     fout4.write('\n')
                     fout4.close()
 
-def get_prroc_averages(prroc_conds,classifiers, cl, outdir, write=False):
-    ''' averages the classifier performance for all cross validation steps
+# def get_prroc_averages(prroc_conds,classifiers, cl, outdir, write=True):
+#     ''' averages the classifier performance for all cross validation steps
 
-    Inputs:
-    prroc_conds (list of str) the results from which classifier and feature set combo to average
-    outdir (str) directory of where to save the written files 
-    classifiers (list of TPOT classifiers)
-    cl (list of str) classifier labels with the same indexing as classifiers
-    write (boolean) for debugging purposes, False will prevent any files from being saved
+#     Inputs:
+#     prroc_conds (list of str) the results from which classifier and feature set combo to average
+#     outdir (str) directory of where to save the written files 
+#     classifiers (list of TPOT classifiers)
+#     cl (list of str) classifier labels with the same indexing as classifiers
+#     write (boolean) for debugging purposes, False will prevent any files from being saved
 
-    Outputs:returns None, but will save the following files (if the write variable is True)
-    newprroc/level2_summary.csv average performance metrics for the hyperparameter tuned enesemble classifiers
-    '''
-    for clf_i in range(len(classifiers)):
-        if 'all-'+cl[clf_i] in prroc_conds:
-            for rs in range(10):
-                train_data = pd.read_csv(outdir+str(rs)+'-level2_train.csv', header=None)
-                train_data = train_data.transpose()
-                train_data.drop(train_data.tail(1).index,inplace=True)
-                Ltrain = get_label_from_l1(outdir, 'train')
-                test_data = pd.read_csv(outdir+str(rs)+'-level2_test.csv', header=None)
-                average_predictor = test_data.mean().to_list()[:-1]
-                test_data = test_data.transpose()
-                test_data.drop(test_data.tail(1).index,inplace=True)
-                Ltest = get_label_from_l1(outdir, 'test')
+#     Outputs:returns None, but will save the following files (if the write variable is True)
+#     newprroc/level2_summary.csv average performance metrics for the hyperparameter tuned enesemble classifiers
+#     '''
+#     for clf_i in range(len(classifiers)):
+#         if 'all-'+cl[clf_i] in prroc_conds:
+#             for rs in range(10):
+#                 train_data = pd.read_csv(outdir+str(rs)+'-level2_train.csv', header=None)
+#                 train_data = train_data.transpose()
+#                 train_data.drop(train_data.tail(1).index,inplace=True)
+#                 Ltrain = get_label_from_l1(outdir, 'train')
+#                 test_data = pd.read_csv(outdir+str(rs)+'-level2_test.csv', header=None)
+#                 average_predictor = test_data.mean().to_list()[:-1]
+#                 test_data = test_data.transpose()
+#                 test_data.drop(test_data.tail(1).index,inplace=True)
+#                 Ltest = get_label_from_l1(outdir, 'test')
                 
-                if rs == 0:
-                    clf = classifiers[clf_i]
-                    clf.fit(train_data,np.array(Ltrain))
-                    rsmodel = clf.fitted_pipeline_.steps[-1][1]
+#                 if rs == 0:
+#                     clf = classifiers[clf_i]
+#                     clf.fit(train_data,np.array(Ltrain))
+#                     rsmodel = clf.fitted_pipeline_.steps[-1][1]
 
-                y_predict_test1 = rsmodel.predict_proba(test_data)
-                temp_average_predictor = []
-                for elt in average_predictor:
-                    if elt <=0.5:
-                        temp_average_predictor.append(1)
-                    else:
-                        temp_average_predictor.append(0)
-                acc,aroc,f1_val,precision_val,recall_val,mcc = evaluate(np.array(Ltest), temp_average_predictor)
-                if write:
-                    out_str = str(rs)+','+str(acc)+','+str(aroc)+','+str(f1_val)+','+str(precision_val)+','+str(recall_val) +','+str(mcc) +',allaverage\n'
-                    fout0 = open(outdir+'newprroc/level2_summary.csv', '+a')
-                    fout0.write(out_str)
-                    fout0.close()
+#                 y_predict_test1 = rsmodel.predict_proba(test_data)
+#                 temp_average_predictor = []
+#                 for elt in average_predictor:
+#                     if elt <=0.5:
+#                         temp_average_predictor.append(1)
+#                     else:
+#                         temp_average_predictor.append(0)
+#                 acc,aroc,f1_val,precision_val,recall_val,mcc = evaluate(np.array(Ltest), temp_average_predictor)
+#                 if write:
+#                     out_str = str(rs)+','+str(acc)+','+str(aroc)+','+str(f1_val)+','+str(precision_val)+','+str(recall_val) +','+str(mcc) +',allaverage\n'
+#                     fout0 = open(outdir+'newprroc/level2_summary.csv', '+a')
+#                     fout0.write(out_str)
+#                     fout0.close()
 
-                    temp_ypred = []
-                    for elt in list(y_predict_test1):
-                        temp_ypred.append(float(elt[1]))
-                    fpr, tpr, thresholds = roc_curve(np.array(Ltest), temp_ypred, pos_label=1)
-                    precision, recall, thresholds = precision_recall_curve(np.array(Ltest), temp_ypred)
+#                     temp_ypred = []
+#                     for elt in list(y_predict_test1):
+#                         temp_ypred.append(float(elt[1]))
+#                     fpr, tpr, thresholds = roc_curve(np.array(Ltest), temp_ypred, pos_label=1)
+#                     precision, recall, thresholds = precision_recall_curve(np.array(Ltest), temp_ypred)
 
-                    filename = outdir + 'newprroc/'+str(rs)+'all-'+cl[clf_i]+'-curves.csv'
-                    with open(filename,"w") as f:
-                        f.write("\n".join(",".join(map(str, x)) for x in (fpr,tpr,precision, recall)))
+#                     filename = outdir + 'newprroc/'+str(rs)+'all-'+cl[clf_i]+'-curves.csv'
+#                     with open(filename,"w") as f:
+#                         f.write("\n".join(",".join(map(str, x)) for x in (fpr,tpr,precision, recall)))
                     
-                    fpr, tpr, thresholds = roc_curve(np.array(Ltest), average_predictor, pos_label=1)
-                    precision, recall, thresholds = precision_recall_curve(np.array(Ltest), average_predictor)
+#                     fpr, tpr, thresholds = roc_curve(np.array(Ltest), average_predictor, pos_label=1)
+#                     precision, recall, thresholds = precision_recall_curve(np.array(Ltest), average_predictor)
 
-                    filename = outdir +'newprroc/'+ str(rs)+'all-average-curves.csv'
-                    with open(filename,"w") as f:
-                        f.write("\n".join(",".join(map(str, x)) for x in (fpr,tpr,precision, recall)))
+#                     filename = outdir +'newprroc/'+ str(rs)+'all-average-curves.csv'
+#                     with open(filename,"w") as f:
+#                         f.write("\n".join(",".join(map(str, x)) for x in (fpr,tpr,precision, recall)))
 
-def get_average_performance_l1(outdir, infile,outfile):
-    '''averages the classifier performance for all cross validation steps for the classifiers trained on each feature set
+# def get_average_performance_l1(outdir, infile,outfile, write=True):
+#     '''averages the classifier performance for all cross validation steps for the classifiers trained on each feature set
 
-    Inputs:
-    outdir (str) directory of where to save the written files 
-    infile (str) the file that contains all the performance metrics for the model
-    outfile (str) name of the file to save the average performance to
+#     Inputs:
+#     outdir (str) directory of where to save the written files 
+#     infile (str) the file that contains all the performance metrics for the model
+#     outfile (str) name of the file to save the average performance to
 
-    Output:returns None, but will save the following file  - outfile
-    '''
-    out = {}
-    line_i = 0
-    with open(outdir+infile) as fo:
-        for line in fo:
-            if line_i != 0:
-                split_line = line[:-1].split(',')
-                current_key = split_line[1] + '_' + split_line[8]
-                if current_key not in out:
-                    out[current_key] = {'Accuracy':0, 'AUROC':0,'F1':0,'Precision':0,'Recall':0, 'MCC':0}
-                out[current_key]['Accuracy'] = out[current_key]['Accuracy'] + float(split_line[2])
-                out[current_key]['AUROC'] = out[current_key]['AUROC'] + float(split_line[3])
-                out[current_key]['F1'] = out[current_key]['F1'] + float(split_line[4])
-                out[current_key]['Precision'] = out[current_key]['Precision'] + float(split_line[5])
-                out[current_key]['Recall'] = out[current_key]['Recall'] + float(split_line[6])
-                out[current_key]['MCC'] = out[current_key]['MCC'] + float(split_line[7])
-            line_i += 1
-    l = ['Accuracy', 'AUROC','F1','Precision','Recall','MCC']
-    for dict_key in out.keys():
-        line_out = dict_key
-        for k in l:
-            line_out = line_out + ',' + str(out[dict_key][k]/10)
-        fout = open(outdir+outfile, 'a+')
-        fout.write(line_out + '\n')
-        fout.close()
+#     Output:returns None, but will save the following file  - outfile
+#     '''
+#     out = {}
+#     line_i = 0
+#     with open(outdir+infile) as fo:
+#         for line in fo:
+#             if line_i != 0:
+#                 split_line = line[:-1].split(',')
+#                 current_key = split_line[1] + '_' + split_line[8]
+#                 if current_key not in out:
+#                     out[current_key] = {'Accuracy':[], 'AUROC':[],'F1':[],'Precision':[],'Recall':[], 'MCC':[]}
+#                 out[current_key]['Accuracy'] = out[current_key]['Accuracy'] + [float(split_line[2])]
+#                 out[current_key]['AUROC'] = out[current_key]['AUROC'] + [float(split_line[3])]
+#                 out[current_key]['F1'] = out[current_key]['F1'] + [float(split_line[4])]
+#                 out[current_key]['Precision'] = out[current_key]['Precision'] + [float(split_line[5])]
+#                 out[current_key]['Recall'] = out[current_key]['Recall'] + [float(split_line[6])]
+#                 out[current_key]['MCC'] = out[current_key]['MCC'] + [float(split_line[7])]
+#             line_i += 1
+#     l = ['Accuracy', 'AUROC','F1','Precision','Recall','MCC']
+#     if write:
+#         out_header = 'Model'
+#         for k in l:
+#             out_header = out_header + ',' + k
+#         fout = open(outdir+outfile, 'a+', encoding="utf-8-sig")
+#         fout.write(out_header + '\n')
+#         fout.close()
+#     for dict_key in out.keys():
+#         line_out = dict_key
+#         for k in l:
+#             line_out = line_out + ',' + str(round(sum(out[dict_key][k])/10,3)) + "±" + str(round(statistics.stdev(out[dict_key][k]),3))
+#             #line_out = line_out + ',' + str(out[dict_key][k]/10)
+#         if write:
+#             fout = open(outdir+outfile, 'a+', encoding="utf-8-sig")
+#             fout.write(line_out + '\n')
+#             fout.close()
 
 def make_level2_data(outdir,test_or_train, best_models):
     '''reformats the predictions from the classifiers trained on a subset of features to be used as training and testing data for the ensemble
@@ -699,40 +793,40 @@ def make_level2_data(outdir,test_or_train, best_models):
         fout.write(out)
         fout.close()
 
-def get_average_performance_l2(outdir, infile,outfile):
-    '''averages the ensemble performance for all cross validation steps
+# def get_average_performance_l2(outdir, infile,outfile):
+#     '''averages the ensemble performance for all cross validation steps
 
-    Inputs:
-    outdir (str) directory of where to save the written files 
-    infile (str) the file that contains all the performance metrics for the model
-    outfile (str) name of the file to save the average performance to
+#     Inputs:
+#     outdir (str) directory of where to save the written files 
+#     infile (str) the file that contains all the performance metrics for the model
+#     outfile (str) name of the file to save the average performance to
 
-    Output:returns None, but will save the following file  - outfile
-    '''
-    out = {}
-    with open(outdir+infile) as fo:
-        line_i = 0
-        for line in fo:
-            if line_i != 0:
-                split_line = line.replace('\n','').split(',')
-                current_key = split_line[7]
-                if current_key not in out:
-                    out[current_key] = {'Accuracy':0, 'AUROC':0,'F1':0,'Precision':0,'Recall':0, 'MCC':0}
-                out[current_key]['Accuracy'] = out[current_key]['Accuracy'] + float(split_line[1])
-                out[current_key]['AUROC'] = out[current_key]['AUROC'] + float(split_line[2])
-                out[current_key]['F1'] = out[current_key]['F1'] + float(split_line[3])
-                out[current_key]['Precision'] = out[current_key]['Precision'] + float(split_line[4])
-                out[current_key]['Recall'] = out[current_key]['Recall'] + float(split_line[5])
-                out[current_key]['MCC'] = out[current_key]['MCC'] + float(split_line[6])
-            line_i+=1
-    l = ['Accuracy', 'AUROC','F1','Precision','Recall','MCC']
-    for dict_key in out.keys():
-        line_out = dict_key
-        for k in l:
-            line_out = line_out + ',' + str(out[dict_key][k]/10)
-        fout = open(outdir+outfile, 'a+')
-        fout.write(line_out + '\n')
-        fout.close()
+#     Output:returns None, but will save the following file  - outfile
+#     '''
+#     out = {}
+#     with open(outdir+infile) as fo:
+#         line_i = 0
+#         for line in fo:
+#             if line_i != 0:
+#                 split_line = line.replace('\n','').split(',')
+#                 current_key = split_line[7]
+#                 if current_key not in out:
+#                     out[current_key] = {'Accuracy':0, 'AUROC':0,'F1':0,'Precision':0,'Recall':0, 'MCC':0}
+#                 out[current_key]['Accuracy'] = out[current_key]['Accuracy'] + float(split_line[1])
+#                 out[current_key]['AUROC'] = out[current_key]['AUROC'] + float(split_line[2])
+#                 out[current_key]['F1'] = out[current_key]['F1'] + float(split_line[3])
+#                 out[current_key]['Precision'] = out[current_key]['Precision'] + float(split_line[4])
+#                 out[current_key]['Recall'] = out[current_key]['Recall'] + float(split_line[5])
+#                 out[current_key]['MCC'] = out[current_key]['MCC'] + float(split_line[6])
+#             line_i+=1
+#     l = ['Accuracy', 'AUROC','F1','Precision','Recall','MCC']
+#     for dict_key in out.keys():
+#         line_out = dict_key
+#         for k in l:
+#             line_out = line_out + ',' + str(out[dict_key][k]/10)
+#         fout = open(outdir+outfile, 'a+')
+#         fout.write(line_out + '\n')
+#         fout.close()
 
 # Variable Values
 parametersRF = {'criterion': ['entropy', 'gini'],'max_depth': list(np.linspace(10, 500, 10, dtype = int)) + [None],'max_features': ['auto', 'sqrt','log2', None],'min_samples_leaf': [2, 15],'min_samples_split': [5, 15],'n_estimators': list(np.linspace(150, 500, 10, dtype = int))}
@@ -746,3 +840,49 @@ my_search = TPOTClassifier( population_size= 24, offspring_size= 12, verbosity= 
 og_search = TPOTClassifier(generations= 5, population_size= 24, offspring_size= 12, verbosity= 2, early_stop= 12, config_dict='TPOT NN', cv = 5, scoring = 'accuracy', random_state=0,)
 classifiers = [my_search, og_search]
 cl = ['tpotsk','tpotdefault']
+
+outdir = 'ensemble_train_603010/'
+#bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotsk']
+# get_prroc(bm, 1, 0, 0.6, 0.3, 0.1,classifiers, cl, outdir, write=True)
+get_ensemble_prroc(1, 0, 0.6, 0.3, 0.1,classifiers, cl, outdir, write=True)
+
+
+#outdir = 'retrained2/'
+# tuning_level1(1, 0, 10, 0.9 ,classifiers, cl, outdir)
+# make_level2_data(outdir,'train', ['sages-tpotdefault', 'fp-tpotdefault', 'drug_features-tpotsk', 'targetsall-tpotdefault' ])
+# make_level2_data(outdir,'test', ['sages-tpotdefault', 'fp-tpotdefault', 'drug_features-tpotsk', 'targetsall-tpotdefault' ])
+#tuning_level2(classifiers, cl, outdir, write = True)
+#
+
+#outdir = 'ensemble_train_9010/'
+#tuning_level1(1, 0, 10, 0.9 ,classifiers, cl, outdir)
+# bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotdefault']
+# make_level2_data(outdir,'train',bm )
+# make_level2_data(outdir,'test', bm)
+# tuning_level2(classifiers, cl, outdir, write = True)
+
+
+# # outdir = 'ensemble_train_702010/'
+# outdir = 'normtargetensemble_train_702010/'
+# # tuning_level1(1, 0, 10, 0.7, 0.2, 0.1,classifiers, cl, outdir)
+# # bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotdefault']
+# bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotsk']
+# make_level2_data(outdir,'train',bm )
+# make_level2_data(outdir,'test', bm)
+# tuning_level2(classifiers, cl, outdir, write = True)
+
+# # outdir = 'ensemble_train_801010/'
+# outdir = 'normtargetensemble_train_801010/'
+# # tuning_level1(1, 0, 10, 0.8, 0.1, 0.1,classifiers, cl, outdir)
+# # bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotsk', 'targetsall-tpotdefault']
+# bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotsk', 'targetsall-tpotdefault']
+# make_level2_data(outdir,'train',bm )
+# make_level2_data(outdir,'test', bm)
+# tuning_level2(classifiers, cl, outdir, write = True)
+
+# outdir = 'ensemble_train_603010/'
+# # tuning_level1(1, 0, 10, 0.6, 0.3, 0.1,classifiers, cl, outdir)
+# bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotsk']
+# make_level2_data(outdir,'train',bm )
+# make_level2_data(outdir,'test', bm)
+# tuning_level2(classifiers, cl, outdir, write = True)
