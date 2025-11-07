@@ -17,6 +17,10 @@ from sklearn.feature_selection import RFECV
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.feature_selection import GenericUnivariateSelect, chi2
 
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(current_dir)
+
 def load_labels(label_key_number, random_seed, train1_percent, train2_percent, test_percent):
     '''loads drugs corresponding to a ballanced training and two test sets
 
@@ -841,10 +845,18 @@ og_search = TPOTClassifier(generations= 5, population_size= 24, offspring_size= 
 classifiers = [my_search, og_search]
 cl = ['tpotsk','tpotdefault']
 
-outdir = 'ensemble_train_603010/'
+
 #bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotsk']
 # get_prroc(bm, 1, 0, 0.6, 0.3, 0.1,classifiers, cl, outdir, write=True)
-get_ensemble_prroc(1, 0, 0.6, 0.3, 0.1,classifiers, cl, outdir, write=True)
+
+outdir = 'ensemble_train_603010/'
+tuning_level1(1, 0, 10, 0.6, 0.3, 0.1,classifiers, cl, outdir)
+bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotsk']
+make_level2_data(outdir,'train',bm)
+make_level2_data(outdir,'test', bm)
+tuning_level2(classifiers, cl, outdir, write = True)
+
+get_ensemble_prroc(1, 0, 0.6, 0.3, 0.1, classifiers, cl, outdir, write=True)
 
 
 #outdir = 'retrained2/'
@@ -855,7 +867,7 @@ get_ensemble_prroc(1, 0, 0.6, 0.3, 0.1,classifiers, cl, outdir, write=True)
 #
 
 #outdir = 'ensemble_train_9010/'
-#tuning_level1(1, 0, 10, 0.9 ,classifiers, cl, outdir)
+#tuning_level1(1, 0, 10, 0.9 , classifiers, cl, outdir)
 # bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotdefault']
 # make_level2_data(outdir,'train',bm )
 # make_level2_data(outdir,'test', bm)
@@ -880,9 +892,4 @@ get_ensemble_prroc(1, 0, 0.6, 0.3, 0.1,classifiers, cl, outdir, write=True)
 # make_level2_data(outdir,'test', bm)
 # tuning_level2(classifiers, cl, outdir, write = True)
 
-# outdir = 'ensemble_train_603010/'
-# # tuning_level1(1, 0, 10, 0.6, 0.3, 0.1,classifiers, cl, outdir)
-# bm = ['sages-tpotsk', 'fp-tpotsk', 'drug_features-tpotdefault', 'targetsall-tpotsk']
-# make_level2_data(outdir,'train',bm )
-# make_level2_data(outdir,'test', bm)
-# tuning_level2(classifiers, cl, outdir, write = True)
+
