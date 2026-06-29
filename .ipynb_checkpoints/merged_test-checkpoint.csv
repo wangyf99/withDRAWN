@@ -1,0 +1,41 @@
+,drug,withdrawn_class,smiles
+0,chembl2105233,1,C=CCC1(CC(C)O)C(=O)NC(=O)NC1=O
+1,chembl146095,1,O=C(OCC(O)CO)c1ccccc1Nc1ccnc2cc(Cl)ccc12
+2,chembl2106829,1,Cc1ccccc1-n1c(C)nc2ccccc2c1=O.Cl
+3,chembl282724,1,Cc1cc2c(cc1CC(=O)c1sccc1S(=O)(=O)Nc1onc(C)c1Cl)OCO2
+4,chembl462547,1,CCOC(N)=O
+5,chembl1213351,1,CCC(=O)O[C@](Cc1ccccc1)(c1ccccc1)[C@H](C)CN(C)C
+6,chembl53292,1,Cc1cc(NC(=O)C2=C(O)c3ccccc3S(=O)(=O)N2C)no1
+7,chembl1256841,1,O=C(CCNNC(=O)c1ccncc1)NCc1ccccc1
+8,chembl1291,1,CC(=O)Oc1c(C)cc(OCC(O)CNC(C)C)c(C)c1C
+9,chembl1200695,1,CC(N)C(O)c1ccccc1.Cl
+10,chembl21869,1,O=C(Nc1ccc(Br)cc1)c1cc(Br)ccc1O
+11,chembl3187246,1,CN(C)CCN(Cc1cccs1)c1ccccn1.CN(C)CCN(Cc1cccs1)c1ccccn1.O=C(O)/C=C/C(=O)O.O=C(O)/C=C/C(=O)O.O=C(O)/C=C/C(=O)O
+12,chembl646,1,Cc1nnc2n1-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2
+13,chembl37744,1,CN(C)C/C=C(/c1ccc(Br)cc1)c1cccnc1
+14,chembl3188576,1,CN[C@@H]1[C@H](O[C@H]2[C@H](O[C@H]3[C@H](O)[C@@H](O)[C@H](NC(=N)N)[C@@H](O)[C@@H]3NC(=N)N)O[C@@H](C)[C@]2(O)CO)O[C@@H](CO)[C@H](O)[C@H]1O.CN[C@@H]1[C@H](O[C@H]2[C@H](O[C@H]3[C@H](O)[C@@H](O)[C@H](NC(=N)N)[C@@H](O)[C@@H]3NC(=N)N)O[C@@H](C)[C@]2(O)CO)O[C@@H](CO)[C@H](O)[C@H]1O.O=S(=O)(O)O.O=S(=O)(O)O.O=S(=O)(O)O
+15,chembl13376,1,COc1ccc2c(C(=O)c3ccc(Cl)cc3)c(C)n(CC(=O)O)c2c1
+16,chembl277100,1,CC1CN(c2cc3c(cc2F)c(=O)c(C(=O)O)cn3-c2ccc(F)cc2F)CCN1
+17,chembl522038,1,CCOC(=O)CN[C@@H](C(=O)N1CC[C@H]1C(=O)NCc1ccc(/C(N)=N\O)cc1)C1CCCCC1
+18,chembl412873,1,C1CCN2C[C@H]3C[C@H](CN4CCCC[C@@H]34)[C@H]2C1
+19,chembl400599,1,CC(Cc1cccc(C(F)(F)F)c1)NCCOC(=O)c1ccccc1
+20,diclofenac sodium topical gel- 1%-,0,O=C([O-])Cc1ccccc1Nc1c(Cl)cccc1Cl.[Na+]
+21,ethotoin,0,CCN1C(=O)NC(c2ccccc2)C1=O
+22,toremifene citrate,0,CN(C)CCOc1ccc(/C(=C(/CCCl)c2ccccc2)c2ccccc2)cc1.O=C(O)CC(O)(CC(=O)O)C(=O)O
+23,epinastine hydrochloride,0,Cl.NC1=NCC2c3ccccc3Cc3ccccc3N12
+24,tecovirimat monohydrate,0,O.O=C(NN1C(=O)[C@@H]2[C@@H]3C=C[C@@H]([C@H]4C[C@@H]34)[C@@H]2C1=O)c1ccc(C(F)(F)F)cc1
+25,selexipag,0,CC(C)N(CCCCOCC(=O)NS(C)(=O)=O)c1cnc(-c2ccccc2)c(-c2ccccc2)n1
+26,levalbuterol tartrate,0,CC(C)(C)NC[C@H](O)c1ccc(O)c(CO)c1.CC(C)(C)NC[C@H](O)c1ccc(O)c(CO)c1.O=C(O)C(O)C(O)C(=O)O
+27,cyclobenzaprine,0,CN(C)CCC=C1c2ccccc2C=Cc2ccccc21
+28,adefovir dipivoxil,0,CC(C)(C)C(=O)OCOP(=O)(COCCn1cnc2c(N)ncnc21)OCOC(=O)C(C)(C)C
+29,fluocinolone acetonide,0,CC1(C)O[C@@H]2C[C@H]3[C@@H]4C[C@H](F)C5=CC(=O)C=C[C@]5(C)[C@@]4(F)[C@@H](O)C[C@]3(C)[C@]2(C(=O)CO)O1
+30,anagrelide,0,O=C1CN2Cc3c(ccc(Cl)c3Cl)N=C2N1
+31,isoniazid,0,NNC(=O)c1ccncc1
+32,tigecycline,0,CN(C)c1cc(NC(=O)CNC(C)(C)C)c(O)c2c1C[C@H]1C[C@H]3[C@H](N(C)C)C(O)=C(C(N)=O)C(=O)[C@@]3(O)C(O)=C1C2=O
+33,phenazopyridine hydrochloride,0,Cl.Nc1ccc(/N=N/c2ccccc2)c(N)n1
+34,valacyclovir,0,CC(C)[C@H](N)C(=O)OCCOCn1cnc2c(=O)nc(N)[nH]c21
+35,enalapril,0,CCOC(=O)[C@H](CCc1ccccc1)N[C@@H](C)C(=O)N1CCC[C@H]1C(=O)O
+36,anagrelide hydrochloride,0,Cl.O=C1CN2Cc3c(ccc(Cl)c3Cl)N=C2N1
+37,cetirizine hydrochloride,0,Cl.Cl.O=C(O)COCCN1CCN(C(c2ccccc2)c2ccc(Cl)cc2)CC1
+38,fedratinib hydrochloride,0,Cc1cnc(Nc2ccc(OCCN3CCCC3)cc2)nc1Nc1cccc(S(=O)(=O)NC(C)(C)C)c1.Cl.Cl.O
+39,enfuvirtide,0,CC[C@H](C)[C@H](NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CO)NC(=O)[C@H](Cc1cnc[nH]1)NC(=O)[C@@H](NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CO)NC(=O)[C@@H](NC(=O)[C@H](Cc1ccc(O)cc1)NC(C)=O)[C@@H](C)O)[C@@H](C)CC)C(=O)N[C@@H](CCC(=O)O)C(=O)N[C@@H](CCC(=O)O)C(=O)N[C@@H](CO)C(=O)N[C@@H](CCC(N)=O)C(=O)N[C@@H](CC(N)=O)C(=O)N[C@@H](CCC(N)=O)C(=O)N[C@@H](CCC(N)=O)C(=O)N[C@@H](CCC(=O)O)C(=O)N[C@@H](CCCCN)C(=O)N[C@@H](CC(N)=O)C(=O)N[C@@H](CCC(=O)O)C(=O)N[C@@H](CCC(N)=O)C(=O)N[C@@H](CCC(=O)O)C(=O)N[C@@H](CC(C)C)C(=O)N[C@@H](CC(C)C)C(=O)N[C@@H](CCC(=O)O)C(=O)N[C@@H](CC(C)C)C(=O)N[C@@H](CC(=O)O)C(=O)N[C@@H](CCCCN)C(=O)N[C@@H](Cc1c[nH]c2ccccc12)C(=O)N[C@@H](C)C(=O)N[C@@H](CO)C(=O)N[C@@H](CC(C)C)C(=O)N[C@@H](Cc1c[nH]c2ccccc12)C(=O)N[C@@H](CC(N)=O)C(=O)N[C@@H](Cc1c[nH]c2ccccc12)C(=O)N[C@@H](Cc1ccccc1)C(N)=O

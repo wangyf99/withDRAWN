@@ -1,0 +1,5 @@
+  0%|                                                  | 0/990 [00:00<?, ?it/s]/opt/anaconda3/lib/python3.13/site-packages/torch/utils/data/dataloader.py:692: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  warnings.warn(warn_msg)
+100%|██████████████████████████████████████| 990/990 [1:16:19<00:00,  4.63s/it]
+{'train_runtime': 4581.3746, 'train_samples_per_second': 6.777, 'train_steps_per_second': 0.216, 'train_loss': 0.33603826965948547, 'epoch': 30.0}
+logging dir: /Users/alexwang/Documents/GitHub/withDRAWN/model/seed_1/runs/May13_14-04-05_mac.wireless.mountsinai.org

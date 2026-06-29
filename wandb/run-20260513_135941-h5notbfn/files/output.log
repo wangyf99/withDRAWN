@@ -1,0 +1,22 @@
+  0%|                                                 | 0/3300 [00:00<?, ?it/s]/opt/anaconda3/lib/python3.13/site-packages/torch/utils/data/dataloader.py:692: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, device pinned memory won't be used.
+  warnings.warn(warn_msg)
+  2%|▉                                     | 78/3300 [03:53<8:07:27,  9.08s/it]Traceback (most recent call last):
+  File "/opt/anaconda3/bin/t5chem", line 8, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/t5chem/__main__.py", line 33, in main
+    command(args)
+    ~~~~~~~^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/t5chem/run_trainer.py", line 285, in train
+    trainer.train()
+    ~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/transformers/trainer.py", line 2325, in train
+    return inner_training_loop(
+        args=args,
+    ...<2 lines>...
+        ignore_keys_for_eval=ignore_keys_for_eval,
+    )
+  File "/opt/anaconda3/lib/python3.13/site-packages/transformers/trainer.py", line 2679, in _inner_training_loop
+    and (torch.isnan(tr_loss_step) or torch.isinf(tr_loss_step))
+                                      ~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyboardInterrupt

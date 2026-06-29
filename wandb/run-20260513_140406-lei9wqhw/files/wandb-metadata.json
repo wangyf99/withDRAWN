@@ -1,0 +1,42 @@
+{
+  "os": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
+  "python": "CPython 3.13.5",
+  "startedAt": "2026-05-13T18:04:06.433935Z",
+  "args": [
+    "train",
+    "--data_dir",
+    "/Users/alexwang/Documents/GitHub/withDRAWN/data/WithDrawn/seed_1",
+    "--output_dir",
+    "/Users/alexwang/Documents/GitHub/withDRAWN/model/seed_1",
+    "--num_classes",
+    "2",
+    "--pretrain",
+    "/Users/alexwang/Documents/GitHub/DrugWithdrawn/models/pretrain/simple",
+    "--task_type",
+    "classification",
+    "--num_epoch",
+    "30"
+  ],
+  "program": "/opt/anaconda3/bin/t5chem",
+  "git": {
+    "remote": "https://github.com/wangyf99/withDRAWN.git",
+    "commit": "f4b610927556bc9c9303b31dbcdcf56fdd4173e6"
+  },
+  "email": "alexyfwang@gmail.com",
+  "root": "/Users/alexwang/Documents/GitHub/withDRAWN",
+  "host": "mac.wireless.mountsinai.org",
+  "executable": "/opt/anaconda3/bin/python3.13",
+  "cpu_count": 8,
+  "cpu_count_logical": 8,
+  "disk": {
+    "/": {
+      "total": "494384795648",
+      "used": "336371904512"
+    }
+  },
+  "memory": {
+    "total": "17179869184"
+  },
+  "apple": {},
+  "writerId": "a3ofdtgk7kdlzbur24oldzyaxo49y8z6"
+}
