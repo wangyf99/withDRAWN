@@ -1,6 +1,12 @@
 """
 Runs the simple_tox_pred.py logic but uses the pre-exported TPOT pipelines
 (XGBClassifier max_depth=10, n_estimators=150) to skip the lengthy TPOT search.
+
+In addition to the original train/test evaluation loop, this version also
+uses each of the 10 re-fit models to predict withdrawal risk for the drugs
+currently in clinical trials (trials_sages.csv, trials_fp.csv,
+trials_drug_features.csv, trials_targetsall.csv) and writes those
+predictions to a new, dedicated output folder.
 """
 import os, sys, random, math
 import numpy as np
@@ -26,6 +32,17 @@ os.chdir('/Users/alexwang/Documents/GitHub/withDRAWN')
 
 OUTDIR = 'simple_8010/'
 os.makedirs(OUTDIR + 'prroc', exist_ok=True)
+
+# New, dedicated folder for clinical-trial drug predictions.
+TRIAL_OUTDIR = 'simple_8010_trial_predictions/'
+os.makedirs(TRIAL_OUTDIR, exist_ok=True)
+
+TRIAL_FILES = {
+    'sages':         'trials_sages.csv',
+    'fp':            'trials_fp.csv',
+    'drug_features': 'trials_drug_features.csv',
+    'targetsall':    'trials_targetsall.csv',
+}
 
 # ── helpers (identical to simple_tox_pred.py) ────────────────────────────────
 
@@ -96,6 +113,66 @@ def update_miss_dict(d, names, labels, preds):
             d[names[i]] = d.get(names[i], 0) + 1
     return d
 
+# ── trial-drug helpers ────────────────────────────────────────────────────
+
+def load_trial_data():
+    '''Loads the clinical-trial drug feature files (same 4-part feature
+    layout as load_data: sages + fp + drug_features + targetsall) and
+    concatenates them by row position, since all 4 files share the same
+    drug ordering. Unlike load_nongraph, this keeps drug IDs in their
+    original (unlowercased) form and original file order, since these
+    drugs are not being looked up against tox_labels.csv.
+
+    Output: (ids, trial_df) where ids (list of str) are the drug
+    identifiers in file order and trial_df (pandas DataFrame) is the raw,
+    un-normalized feature matrix.
+    '''
+    def load_file(filename):
+        ids, rows = [], []
+        with open(filename) as fo:
+            for line in fo:
+                sp = line[:-1].split(',')
+                ids.append(sp[0])
+                vals = []
+                for elt in sp[1:]:
+                    try:    vals.append(float(elt))
+                    except: vals.append(0.0)
+                rows.append(vals)
+        return ids, rows
+
+    ids_sages, sages = load_file(TRIAL_FILES['sages'])
+    ids_fp,    fp    = load_file(TRIAL_FILES['fp'])
+    ids_df,    df    = load_file(TRIAL_FILES['drug_features'])
+    ids_ta,    ta    = load_file(TRIAL_FILES['targetsall'])
+
+    if not (ids_sages == ids_fp == ids_df == ids_ta):
+        raise ValueError('Trial data files are not row-aligned; cannot '
+                          'concatenate features by position.')
+
+    all_data = [sages[i] + fp[i] + df[i] + ta[i] for i in range(len(sages))]
+    return ids_sages, pd.DataFrame(all_data)
+
+def normalize_trial_data(train_names, trial_df):
+    '''Normalizes the trial feature matrix using min/max computed from a
+    freshly-loaded (i.e. not yet normalized in place) training set, so the
+    trial predictions always use the correct, un-corrupted training bounds
+    regardless of what has happened to any other DataFrame in the caller.
+
+    Inputs:
+    train_names (list of str) drug names for the current seed's training set
+    trial_df (pandas DataFrame) raw trial feature matrix from load_trial_data
+
+    Output: normalized pandas DataFrame, same shape as trial_df
+    '''
+    lt = load_data(train_names)
+    mins = lt.min(axis=0)
+    maxs = lt.max(axis=0)
+    out = trial_df.copy()
+    for col in range(out.shape[1]):
+        mi, ma = mins[col], maxs[col]
+        out[col] = (out[col]-mi)/(ma-mi)
+    return out.fillna(0)
+
 # ── main loop (mirrors tuning_level1 but uses pre-built XGB directly) ─────────
 
 classifier_labels = ['tpotdefault']   # as per simple_tox_pred.py (cl = ['tpotdefault'])
@@ -105,6 +182,15 @@ miss_train, miss_test = {}, {}
 fout0 = open(OUTDIR+'simple_level0_summary.csv', 'w')
 fout0.write('RandomSeed,TestSet,Data,Accuracy,AUROC,F1,Precision,Recall,MCC,Classifier\n')
 fout0.close()
+
+# Load the trial drug features once; they get re-normalized per seed below
+# since normalization depends on that seed's training-set min/max.
+trial_ids, trial_raw = load_trial_data()
+
+# drug_id -> list of predicted probability of class 1, one entry per seed
+trial_proba_by_seed = {drug_id: [] for drug_id in trial_ids}
+# drug_id -> list of hard predicted class, one entry per seed
+trial_pred_by_seed = {drug_id: [] for drug_id in trial_ids}
 
 for cl_label in classifier_labels:
     print(f"\n=== Classifier: {cl_label} ===")
@@ -155,6 +241,37 @@ for cl_label in classifier_labels:
             with open(fname, 'w') as f:
                 f.write("\n".join(",".join(map(str,x)) for x in (fpr,tpr,prec_c,rec_c)))
 
+        # ── predict on the clinical-trial drugs with this seed's model ──────
+        trial_norm  = normalize_trial_data(rstr, trial_raw)
+        trial_pred  = model.predict(trial_norm)
+        trial_proba = model.predict_proba(trial_norm)
+
+        seed_rows = []
+        for i, drug_id in enumerate(trial_ids):
+            p1 = float(trial_proba[i][1])
+            trial_proba_by_seed[drug_id].append(p1)
+            trial_pred_by_seed[drug_id].append(int(trial_pred[i]))
+            seed_rows.append(f"{drug_id},{int(trial_pred[i])},{p1}\n")
+
+        seed_fname = TRIAL_OUTDIR + f'{rs}_{cl_label}_trial_predictions.csv'
+        with open(seed_fname, 'w') as f:
+            f.write('drug_id,prediction,proba_withdrawn\n')
+            f.writelines(seed_rows)
+
+# ── aggregate trial predictions across all 10 seeds ──────────────────────────
+summary_fname = TRIAL_OUTDIR + 'trial_predictions_summary.csv'
+with open(summary_fname, 'w') as f:
+    f.write('drug_id,mean_proba_withdrawn,std_proba_withdrawn,'
+            'fraction_seeds_predicted_withdrawn,majority_vote_prediction\n')
+    for drug_id in trial_ids:
+        probas = np.array(trial_proba_by_seed[drug_id])
+        preds  = np.array(trial_pred_by_seed[drug_id])
+        mean_p = probas.mean()
+        std_p  = probas.std()
+        frac_withdrawn = preds.mean()
+        majority = int(round(frac_withdrawn))
+        f.write(f"{drug_id},{mean_p},{std_p},{frac_withdrawn},{majority}\n")
+
 # Write misclassified drugs.
 # NOTE: in the original tuning_level1, BOTH miss_dict_train and
 # miss_dict_test get appended into the SAME file, 'missclassified_drugs_train.csv'
@@ -167,4 +284,5 @@ with open(OUTDIR+'missclassified_drugs_train.csv', 'w') as f:
     for drug, cnt in miss_test.items():
         f.write(f"{drug},{cnt}\n")
 
-print("\nDone! Results written to", OUTDIR)
+print("\nDone! Train/test results written to", OUTDIR)
+print("Clinical-trial drug predictions written to", TRIAL_OUTDIR)
