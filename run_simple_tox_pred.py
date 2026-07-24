@@ -10,6 +10,18 @@ from sklearn.metrics import (accuracy_score, roc_auc_score, f1_score,
                               precision_score, recall_score, matthews_corrcoef,
                               roc_curve, precision_recall_curve)
 
+def make_xgb(random_state=0):
+    '''XGBClassifier(max_depth=10, n_estimators=150), matching the params
+    shown in tpotdefault-onelevel-tpot_exported_pipeline.py /
+    tpotsk-onelevel-tpot_exported_pipeline.py. use_label_encoder was removed
+    in xgboost>=2.0, so we only pass it on older versions that still need it.'''
+    kwargs = dict(max_depth=10, n_estimators=150, random_state=random_state,
+                  eval_metric='logloss')
+    try:
+        return XGBClassifier(use_label_encoder=False, **kwargs)
+    except TypeError:
+        return XGBClassifier(**kwargs)
+
 os.chdir('/Users/alexwang/Documents/GitHub/withDRAWN')
 
 OUTDIR = 'simple_8010/'
@@ -86,14 +98,7 @@ def update_miss_dict(d, names, labels, preds):
 
 # ── main loop (mirrors tuning_level1 but uses pre-built XGB directly) ─────────
 
-print("Loading initial split …")
-train1, test1, test2, Ltrain1, Ltest1, Ltest2 = load_labels(1, 0, 0.8, 0.1)
-
-# The exported pipelines both show XGBClassifier(max_depth=10, n_estimators=150)
-best_model_template = XGBClassifier(max_depth=10, n_estimators=150, random_state=0,
-                                    use_label_encoder=False, eval_metric='logloss')
-
-classifier_labels = ['tpotdefault']   # as per simple_tox_pred.py
+classifier_labels = ['tpotdefault']   # as per simple_tox_pred.py (cl = ['tpotdefault'])
 
 miss_train, miss_test = {}, {}
 
@@ -103,11 +108,16 @@ fout0.close()
 
 for cl_label in classifier_labels:
     print(f"\n=== Classifier: {cl_label} ===")
-    # Fit on seed-0 to mirror "clf.fit" then extract best model
-    train_set0, _ = split_norm_data(train1, test1)
-    base_model = XGBClassifier(max_depth=336, n_estimators=150, random_state=0,
-                                use_label_encoder=False, eval_metric='logloss')
-    base_model.fit(train_set0, np.array(Ltrain1))
+    # NOTE: simple_tox_pred.py extracts the *already-fitted* TPOT pipeline
+    # (clf.fitted_pipeline_.steps[-1][1]) once, with random_state fixed to 0
+    # (TPOT bakes random_state=0 into the exported estimator — see
+    # tpotdefault-onelevel-tpot_exported_pipeline.py). That same fixed-seed
+    # model object is then re-fit on each of the 10 per-seed training sets.
+    # The randomness across the rs loop therefore comes ONLY from the data
+    # split (load_labels(label_key_number, rs, ...)), never from the model's
+    # own random_state. We replicate that here: one XGBClassifier with
+    # random_state=0, reused (re-fit) across all 10 seeds.
+    exctracted_best_model = make_xgb(random_state=0)
 
     for rs in range(0, 10):
         print(f"  random seed {rs} …", flush=True)
@@ -115,9 +125,10 @@ for cl_label in classifier_labels:
         tr_set, te_set1 = split_norm_data(rstr, rste1)
         _,      te_set2 = split_norm_data(rstr, rste2)
 
-        model = XGBClassifier(max_depth=10, n_estimators=150, random_state=rs,
-                               use_label_encoder=False, eval_metric='logloss')
-        model.fit(tr_set, np.array(rsLtr))
+        # Re-fit the SAME model object on this seed's training data, exactly
+        # as `rsmodel = exctracted_best_model.fit(rstrain_set1, ...)` does in
+        # the original tuning_level1 — random_state stays 0 throughout.
+        model = exctracted_best_model.fit(tr_set, np.array(rsLtr))
 
         yp1      = model.predict(te_set1)
         yproba1  = model.predict_proba(te_set1)
@@ -144,11 +155,15 @@ for cl_label in classifier_labels:
             with open(fname, 'w') as f:
                 f.write("\n".join(",".join(map(str,x)) for x in (fpr,tpr,prec_c,rec_c)))
 
-# Write misclassified
+# Write misclassified drugs.
+# NOTE: in the original tuning_level1, BOTH miss_dict_train and
+# miss_dict_test get appended into the SAME file, 'missclassified_drugs_train.csv'
+# (the test-loop write target is a typo/bug in simple_tox_pred.py — it never
+# writes a separate missclassified_drugs_test.csv). We reproduce that exact
+# behavior here so the output matches, rather than "fixing" the typo.
 with open(OUTDIR+'missclassified_drugs_train.csv', 'w') as f:
     for drug, cnt in miss_train.items():
         f.write(f"{drug},{cnt}\n")
-with open(OUTDIR+'missclassified_drugs_test.csv', 'w') as f:
     for drug, cnt in miss_test.items():
         f.write(f"{drug},{cnt}\n")
 

@@ -349,9 +349,9 @@ my_search = TPOTClassifier( population_size= 24, offspring_size= 12, verbosity= 
                                 })
 og_search = TPOTClassifier(generations= 5, population_size= 24, offspring_size= 12, verbosity= 2, early_stop= 12, config_dict='TPOT NN', cv = 5, scoring = 'accuracy', random_state=0,)
 classifiers = [my_search, og_search]
-# cl = ['tpotsk','tpotdefault']
+cl = ['tpotsk','tpotdefault']
 
-cl = ['tpotdefault']
+# cl = ['tpotdefault']
 
 # get_prroc(1, 0, 0.9,classifiers, cl, 'ensemble_train_603010/', write=True)
 
